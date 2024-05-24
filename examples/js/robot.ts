@@ -4,10 +4,16 @@ import helpers from './helpers';
 const engine = 'stock';
 const market = 'shares';
 const secId = 'ABRD';
-const interval = 1;
+const interval = 60;
 
 async function runRobot() {
-  // загружаем свечи за 5 минут
+  const portfolioResponse = await axios.put('http://localhost:3000/portfolio', {
+    accountId: 'test'
+  });
+  const { positions } = portfolioResponse.data;
+  const currentSecPosition = positions.find((position: any) => position.secId === secId);
+  const currentSecAvgPositionPrice = currentSecPosition?.averagePositionPrice.units;
+
   const candlesResponse = await axios.put('http://localhost:3000/candles', {
     engine,
     market,
@@ -18,12 +24,10 @@ async function runRobot() {
 
   const candles = candlesResponse.data;
 
-  const [prevCandle, curCandle] = candles.slice(-2);
-  const prevPrice = helpers.toNumber(prevCandle.close!);
+  const [, curCandle] = candles.slice(-2);
   const curPrice = helpers.toNumber(curCandle.close!);
 
-  // если цена повысилась, создаем заявку на покупку
-  if (curPrice! > prevPrice!) {
+  if (!currentSecAvgPositionPrice || (currentSecAvgPositionPrice - curPrice!) / currentSecAvgPositionPrice > 0.2) {
     const orderResponse = await axios.post('http://localhost:3000/post-order', {
       accountId: 'test',
       engine,
