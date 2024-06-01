@@ -3,18 +3,17 @@
  * npx ts-node examples/js/backtest.ts
  */
 
-import axios from 'axios';
+import axios, { isAxiosError } from 'axios';
 import MockDate from 'mockdate';
-import { interval, runRobot } from './robot';
-import helpers from './helpers';
+import { from, interval, runRobot, to } from './robot';
 
 main();
 
 async function main() {
   // конфигурируем брокер на диапазон дат
   await configureBroker({
-    from: new Date('2022-04-29T12:00:00+03:00'),
-    to: new Date('2022-04-29T15:00:00+03:00'),
+    from: new Date(from),
+    to: new Date(to),
     candleInterval: interval,
   });
 
@@ -24,7 +23,7 @@ async function main() {
   }
 
   // рассчитываем прибыль;
-  await showExpectedYield();
+  await showPortfolio();
 }
 
 async function configureBroker(config: unknown) {
@@ -39,26 +38,36 @@ async function configureBroker(config: unknown) {
 }
 
 async function tick() {
-  const res = await axios.post('http://localhost:3000/post-order', {
-    accountId: 'tick',
-    secId: '',
-    quantity: 0,
-    direction: 0,
-    orderType: 0,
-    orderId: '',
-  });
-  if (res.data.message) {
-    // устанавливаем глобально текущую дату
-    MockDate.set(new Date(res.data.message));
-    return true;
-  } else {
-    return false;
+  try {
+    const res = await axios.post(
+      'http://localhost:3000/post-order',
+      {
+        accountId: 'tick',
+        secId: '',
+        quantity: 0,
+        direction: 0,
+        orderType: 0,
+        orderId: '',
+      }
+    );
+    if (res.data.message) {
+      // устанавливаем глобально текущую дату
+      console.log('\n', res.data.message);
+      MockDate.set(new Date(res.data.message));
+      return true;
+    } else {
+      return false;
+    }
+  } catch (error) {
+    if (isAxiosError(error)) {
+      console.log(error.response?.data)
+    }
   }
 }
 
-async function showExpectedYield() {
+async function showPortfolio() {
   const result = await axios.put('http://localhost:3000/portfolio', { accountId: 'test' });
-  const { expectedYield } = result.data;
-  console.log(`Прибыль: ${helpers.toNumber(expectedYield)}%`);
-  console.log(result.data);
+  const { positions, ...portfolio } = result.data;
+  console.log('\n\nПортфолио ', portfolio);
+  console.log('Позиции ', positions);
 }
