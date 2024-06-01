@@ -91,12 +91,19 @@ export class Operations {
   }
 
   private calcExpectedYield(portfolio: PortfolioResponse) {
+    const positions = [];
+    if (portfolio.positions?.[0]?.quantity?.units) {
+      for (let i = 0; i < portfolio.positions[0].quantity.units; i++) {
+        positions.push(portfolio.positions[0].currentPrice);
+      }
+    }
     const amounts = [
       portfolio.totalAmountCurrencies,
       portfolio.totalAmountBonds,
       portfolio.totalAmountEtf,
       portfolio.totalAmountFutures,
       portfolio.totalAmountShares,
+      ...positions
     ].map(amount => Helpers.toNumber(amount) || 0);
     const currentCapital = amounts.reduce((acc, amount) => acc + amount, 0);
     const { initialCapital } = this.broker.options;
