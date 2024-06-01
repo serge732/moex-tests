@@ -4,8 +4,9 @@
  */
 
 import axios, { isAxiosError } from 'axios';
+import fs from 'fs';
 import MockDate from 'mockdate';
-import { from, interval, runRobot, to } from './robot';
+import { from, interval, operations, runRobot, to } from './robot';
 
 main();
 
@@ -70,4 +71,16 @@ async function showPortfolio() {
   const { positions, ...portfolio } = result.data;
   console.log('\n\nПортфолио ', portfolio);
   console.log('Позиции ', positions);
+  await fs.promises.writeFile('dates', operations
+    .map(([, v]: any) => v)
+    .join('\n'));
+  await fs.promises.writeFile('buy', operations
+    .map(([v,]: any) => Number(v) > 0 ? String(v).split('.').join(',') : '')
+    .join('\n'));
+  await fs.promises.writeFile('sell', operations
+    .map(([v,]: any) => Number(v) < 0 ? String(-v).split('.').join(',') : '')
+    .join('\n'));
+  await fs.promises.writeFile('candles', operations
+    .map(([, , v]: any) => String(v).split('.').join(','))
+    .join('\n'));
 }

@@ -7,6 +7,7 @@ const secId = 'ROSN';
 const from = '2023-08-14T11:30:00';
 const to = '2023-08-31T15:00:00';
 const interval = 60;
+export const operations: any = [];
 
 async function runRobot() {
   const portfolioResponse = await axios.put(
@@ -32,6 +33,7 @@ async function runRobot() {
   );
   const candles = candlesResponse.data;
   const [lastCandle] = candles.slice(-1);
+  candles.forEach((candl: any) => operations.push([, candl.end, helpers.toNumber(candl.close)]))
   const lastPrice = helpers.toNumber(lastCandle?.close);
 
   if (lastPrice) {
@@ -75,6 +77,10 @@ async function runRobot() {
           `Cоздана заявка ${direction === 1 ? 'На покупку' : 'На продажу'}: 
           ${order.secId} ${helpers.toMoneyString(order.initialOrderPrice)}`
         );
+        const operation = Number(helpers.toMoneyString(order.initialOrderPrice).split(' ')[0]);
+        operations.push(direction === 1
+          ? [operation, lastCandle.end, helpers.toNumber(lastCandle.close)]
+          : [-operation, lastCandle.end, helpers.toNumber(lastCandle.close)]);
       } catch (error) {
         // console.log((error as any).response);
       }
