@@ -10,7 +10,8 @@ export class Instruments {
       instrument: {
         engine: req.engine,
         market: req.market,
-        secId: req.secId
+        secId: req.secId,
+        lot: 1
       } as Instrument
     };
   }

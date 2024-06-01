@@ -112,13 +112,13 @@ export class Broker {
 
   private async executeOrder(order: OrderState, price: number) {
     const instrument = await this.getInstrumentBySecId(order.engine, order.market, order.secId);
-    this.setOrderExecuted(order/* , instrument */, price);
-    this.updateBalance(order/* , instrument.lot */);
+    this.setOrderExecuted(order, instrument, price);
+    this.updateBalance(order, instrument.lot);
     const mainOperation = this.createOrderOperation(order, instrument);
     const comissionOperation = this.createComissionOperation(order, mainOperation);
     this.operations.pushOperations([mainOperation, comissionOperation]);
     const figiOperations = await this.getOperationsBySecId(mainOperation.engine, mainOperation.market, mainOperation.secId);
-    const position = this.createPosition(figiOperations/* , instrument */, price);
+    const position = this.createPosition(figiOperations, instrument, price);
     this.operations.replacePortfolioPosition(position);
   }
 
@@ -137,8 +137,8 @@ export class Broker {
   /**
    * Обновляем заблокированные ресурсы после успешного выполнения заявки.
    */
-  protected updateBalance(order: OrderState/* , lot: number */) {
-    const qty = order.lotsExecuted/*  * lot */;
+  protected updateBalance(order: OrderState, lot: number) {
+    const qty = order.lotsExecuted * lot;
     if (order.direction === OrderDirection.ORDER_DIRECTION_BUY) {
       const totalOrderAmount = Helpers.toNumber(order.totalOrderAmount) || 0;
       this.operations.addToBalance(-totalOrderAmount, 'blocked');
@@ -171,10 +171,10 @@ export class Broker {
     }
   }
 
-  private setOrderExecuted(order: OrderState/* , instrument: Instrument */, price: number) {
+  private setOrderExecuted(order: OrderState, instrument: Instrument, price: number) {
     order.executionReportStatus = OrderExecutionReportStatus.EXECUTION_REPORT_STATUS_FILL;
     order.lotsExecuted = order.lotsRequested;
-    const executedOrderPrice = price * order.lotsExecuted/*  * instrument.lot */;
+    const executedOrderPrice = price * order.lotsExecuted * instrument.lot;
     const executedCommission = executedOrderPrice * this.options.brokerFee / 100;
     const totalOrderAmount = executedOrderPrice + executedCommission;
     order.executedOrderPrice = Helpers.toMoneyValue(executedOrderPrice, order.currency);
@@ -232,14 +232,14 @@ export class Broker {
     };
   }
 
-  private createPosition(operations: Operation[]/* , instrument: Instrument */, price: number): PortfolioPosition {
+  private createPosition(operations: Operation[], instrument: Instrument, price: number): PortfolioPosition {
     const qtyOperations = operations.filter(o => o.quantity > 0);
     const { sellLots, quantityLots } = calcPositionLots(qtyOperations);
-    const quantity = quantityLots/*  * instrument.lot */;
+    const quantity = quantityLots * instrument.lot;
     const totalAmountFilo = calcTotalAmount(qtyOperations, sellLots, 'filo');
-    const totalAmountFifo = calcTotalAmount(qtyOperations, sellLots, 'fifo');
+    // const totalAmountFifo = calcTotalAmount(qtyOperations, sellLots, 'fifo');
     const averagePriceFilo = quantity > 0 ? totalAmountFilo / quantity : 0;
-    const averagePriceFifo = quantity > 0 ? totalAmountFifo / quantity : 0;
+    // const averagePriceFifo = quantity > 0 ? totalAmountFifo / quantity : 0;
     return {
       engine: operations[0].engine,
       market: operations[0].market,
@@ -249,7 +249,7 @@ export class Broker {
       quantity: Helpers.toQuotation(quantity),
       currentPrice: Helpers.toMoneyValue(price, operations[0].currency),
       averagePositionPrice: Helpers.toMoneyValue(averagePriceFilo, operations[0].currency),
-      averagePositionPriceFifo: Helpers.toMoneyValue(averagePriceFifo, operations[0].currency),
+      // averagePositionPriceFifo: Helpers.toMoneyValue(averagePriceFifo, operations[0].currency),
     };
   }
 
