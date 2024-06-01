@@ -42,7 +42,7 @@ export class DateIterator {
    */
   getTotalRange() {
     const afterInitialChunk = this.addChunkDateStep(new Date(this.initialChunkDate), 1);
-    const maxTo = Math.max(afterInitialChunk.valueOf(), this.to.valueOf());
+    const maxTo = Math.max(afterInitialChunk.valueOf(), new Date(this.to).getTime());
     return {
       from: this.currentChunkDate,
       to: new Date(maxTo),

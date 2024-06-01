@@ -1,12 +1,12 @@
-import { CandleInterval, GetCandlesRequest, HistoricCandle } from "shared/types/marketdata";
+import { GetCandlesRequest, HistoricCandle } from "shared/types/marketdata";
 import { moexInstance } from "./instance";
 
 export class MarketData {
   async getCandles({ engine, market, secId, interval, from, to }: GetCandlesRequest) {
     const queryParams = [
       (from || '') && `from=${from?.toISOString()}`,
-      (interval || '') && `interval=${interval}`,
       (to || '') && `till=${to?.toISOString()}`,
+      (interval || '') && `interval=${interval}`,
     ]
     const response = await moexInstance.get(
       `engines/${engine}/markets/${market}/securities/${secId}/candles.json?${queryParams.join(
@@ -30,7 +30,9 @@ export class MarketData {
         units: Math.trunc(candl[3]),
         nano: candl[3] - Math.trunc(candl[0])
       },
-      volume: candl[5]
+      volume: candl[5],
+      begin: candl[6],
+      end: candl[7]
     }))
     return { candles: candles };
   }

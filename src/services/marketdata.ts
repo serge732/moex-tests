@@ -146,16 +146,19 @@ export class MarketData {
 
   private getFilteredCandles(engine: string, market: string, secId: string, from: Date, to: Date) {
     const candles = this.candles.get(`${engine}${market}${secId}`) || [];
-    return candles;
+    return candles.filter((candle) => (
+      new Date(candle.begin) > new Date(from) &&
+      new Date(candle.end) < new Date(to)
+    ));
   }
 
   private getNewRange(engine: string, market: string, secId: string, from: Date, to: Date) {
     const loadedRange = this.candlesFromTo.get(`${engine}${market}${secId}`);
     if (!loadedRange) return { from, to };
-    if (from < loadedRange.from || to > loadedRange.to) {
+    if (new Date(from) < new Date(loadedRange.from) || new Date(to) > new Date(loadedRange.to)) {
       return {
-        from: from < loadedRange.from ? from : loadedRange.from,
-        to: to > loadedRange.to ? to : loadedRange.to,
+        from: new Date(from) < new Date(loadedRange.from) ? new Date(from) : new Date(loadedRange.from),
+        to: new Date(to) > new Date(loadedRange.to) ? new Date(to) : new Date(loadedRange.to),
       };
     }
   }

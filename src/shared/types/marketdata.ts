@@ -65,7 +65,7 @@ export enum CandleInterval {
   /** CANDLE_INTERVAL_HOUR - 1 час. */
   CANDLE_INTERVAL_HOUR = 60,
   /** CANDLE_INTERVAL_DAY - 1 день. */
-  CANDLE_INTERVAL_DAY = 5,
+  CANDLE_INTERVAL_DAY = 24,
   UNRECOGNIZED = -1,
 }
 
@@ -339,6 +339,10 @@ export interface HistoricCandle {
   close?: Quotation;
   /** Объём торгов в лотах. */
   volume: number;
+  /** */
+  begin: Date;
+  /** */
+  end: Date;
   /** Время свечи в часовом поясе UTC. */
   time?: Date;
   /** Признак завершённости свечи. **false** значит, свеча за текущие интервал ещё сформирована не полностью. */
