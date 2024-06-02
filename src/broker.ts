@@ -105,7 +105,7 @@ export class Broker {
     const { orders } = await this.orders.getOrders({ accountId: '' });
     debug(`Пробуем исполнить заявки: ${orders.length}`);
     for (const order of orders) {
-      const price = await this.isPriceReached(order);
+      const price = Helpers.toNumber(order.initialOrderPrice)! / order.lotsRequested;
       if (price) await this.executeOrder(order, price);
     }
   }
@@ -128,6 +128,7 @@ export class Broker {
   protected blockBalance(order: OrderState/* , lot: number */) {
     if (order.direction === OrderDirection.ORDER_DIRECTION_BUY) {
       const totalOrderAmount = Helpers.toNumber(order.totalOrderAmount) || 0;
+      console.log({ totalOrderAmount });
       this.operations.blockMoney(totalOrderAmount);
     } else {
       this.operations.blockSecId(order.engine, order.market, order.secId, order.lotsRequested/*  * lot */);
@@ -145,6 +146,7 @@ export class Broker {
       this.operations.addToEngineMarketSecId(order.engine, order.market, order.secId, qty, 'balance');
     } else {
       const executedOrderPrice = Helpers.toNumber(order.executedOrderPrice) || 0;
+      console.log({ executedOrderPrice });
       const executedCommission = Helpers.toNumber(order.executedCommission) || 0;
       this.operations.addToBalance(executedOrderPrice - executedCommission, 'money');
       this.operations.addToEngineMarketSecId(order.engine, order.market, order.secId, -qty, 'blocked');
@@ -236,10 +238,11 @@ export class Broker {
     const qtyOperations = operations.filter(o => o.quantity > 0);
     const { sellLots, quantityLots } = calcPositionLots(qtyOperations);
     const quantity = quantityLots * instrument.lot;
-    const totalAmountFilo = calcTotalAmount(qtyOperations, sellLots, 'filo');
+    const totalAmountFilo = calcTotalAmount(qtyOperations, sellLots, 'fifo');
     // const totalAmountFifo = calcTotalAmount(qtyOperations, sellLots, 'fifo');
-    const averagePriceFilo = quantity > 0 ? totalAmountFilo / quantity : 0;
+    const averagePriceFilo = quantity > 0 ? Math.abs(totalAmountFilo) / quantity : 0;
     // const averagePriceFifo = quantity > 0 ? totalAmountFifo / quantity : 0;
+    // console.log(qtyOperations);
     return {
       engine: operations[0].engine,
       market: operations[0].market,
@@ -297,12 +300,16 @@ function calcPositionLots(operations: Operation[]) {
  */
 function calcTotalAmount(operations: Operation[], selledLots: number, type: 'fifo' | 'filo') {
   if (type === 'filo') operations = operations.reverse();
+  // console.log(operations.map((o) => ({ ...o, payment: Math.abs(Helpers.toNumber(o.payment!)) })));
   return operations
-    .filter(o => o.operationType === OperationType.OPERATION_TYPE_BUY)
-    .reduce((acc, o) => {
+    // .filter(o => o.operationType === OperationType.OPERATION_TYPE_BUY)
+    .reduce((acc, o, i, arr) => {
       selledLots -= o.quantity;
       // todo: если была продана только часть заявки, то тут не очень верно
-      return selledLots < 0 ? acc + Math.abs(Helpers.toNumber(o.payment!)) : acc;
+      // return selledLots < 0 ? acc + Math.abs(Helpers.toNumber(o.payment!)) : acc;
+      return Helpers.toNumber(o.payment!) < 0
+        ? acc + Math.abs(Helpers.toNumber(o.payment!))
+        : 0;
     }, 0);
 }
 

@@ -78,7 +78,7 @@ async function showPortfolio() {
     .map(([v,]: any) => Number(v) > 0 ? String(v).split('.').join(',') : '')
     .join('\n'));
   await fs.promises.writeFile('sell', operations
-    .map(([v,]: any) => Number(v) < 0 ? String(-v).split('.').join(',') : '')
+    .map(([v, , , q]: any) => Number(v) < 0 ? String(-v / q).split('.').join(',') : '')
     .join('\n'));
   await fs.promises.writeFile('candles', operations
     .map(([, , v]: any) => String(v).split('.').join(','))

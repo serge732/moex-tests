@@ -153,6 +153,7 @@ export class Operations {
     }
     const value = Helpers.toNumber(this.positionsResponse[type][index]);
     const newValue = Number(value.toFixed(3)) + Number(amount.toFixed(3));
+    console.log(type, value, amount, newValue);
     // if (newValue < 0) throw new Error(`Отрицательный баланс (${type}): ${newValue}`);
     if (newValue === 0) {
       this.positionsResponse[type].splice(index, 1);

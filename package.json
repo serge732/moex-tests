@@ -1,7 +1,8 @@
 {
   "name": "moex-tests",
   "scripts": {
-    "start": "nodemon ./src/server/start.ts"
+    "start": "nodemon ./src/server/start.ts",
+    "robot": "ts-node ./examples/js/backtest.ts"
   },
   "dependencies": {
     "axios": "^1.6.8",
